@@ -16,8 +16,12 @@
 		<div id="container"></div>
 
     <script src="js/three.js"></script>
+  	<script src="./js/dat.gui.min.js"></script>
+  	<script src="js/water.js"></script>
     <script src="js/OrbitControls.js"></script>
     <script src="js/OBJLoader.js"></script>
+    <script src="js/Reflector.js"></script>
+    <script src="js/Refractor.js"></script>
 		
 
     <script id="vertexShader" type="x-shader/x-vertex">
@@ -73,8 +77,8 @@
 
 	float zOffset = vDisplace;
 
-	vec4 mix1 = mix(grass, hill, min(1.0,zOffset*8.0));
-	vec4 mix2 = max(vec4(1.0), mix(hill, snow, zOffset) * 1.5);
+	vec4 mix1 = mix(grass, hill, min(1.0,zOffset*0.02));
+	vec4 mix2 = mix(hill, snow, zOffset) * 0.5;
 	vec4 mix3 = mix(mix1, mix2, zOffset);
 
 
@@ -188,7 +192,7 @@ var texture2 = new THREE.TextureLoader().load( 'grass.png' );
 var texture3 = new THREE.TextureLoader().load( 'snow.jpg' );
 var texture4 = new THREE.TextureLoader().load( 'hill.jpg' );
 
-var skyMesh, water_box;
+var skyMesh, water_box, options;
 
 init();
 animate();
@@ -200,16 +204,21 @@ function init() {
 	//camera = new THREE.PerspectiveCamera( 50.0, window.innerWidth / window.innerHeight, 0.1, 50 );
 	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 2000 );
 
-
+	camera.rotation.y = 90 * Math.PI / 90;
 	//adds a default mouse listener to control the camera rotation and zoom
-	var controls = new THREE.OrbitControls( camera );
+	
+	
 	//camera.position.z = 5;
-	camera.position.set( 0, 0, 5 );
+	camera.position.set( 0, 3, 6 );
+	//camera.rotation.y = 15.0;
 
-	controls.update();
+	
 
 
 	scene = new THREE.Scene();
+
+
+	
 
 
 	//sky box stuff
@@ -288,10 +297,39 @@ function init() {
 	var gBox = new THREE.BoxGeometry( 6, 1, 6 );
 	water_box = new THREE.Mesh(gBox, water_material);
 	//water_box.position.x -= 1.0;
-	scene.add (water_box);
+	
+	var water_plane = new THREE.PlaneBufferGeometry(50,50);
+	water = new THREE.Water( water_plane, {
+				color: "#00FFFF",
+				scale: 1.0,
+				flowDirection: new THREE.Vector2( 1.0, 1.0 ),
+				textureWidth: 1024,
+				textureHeight: 1024
+	} );
+	water.material.side = THREE.DoubleSide;
+	water.rotateX(-Math.PI/2);
+	//water.position.y +=0.5;
+	scene.add(water);
+	//scene.add (water_box);
 
 
 	renderer = new THREE.WebGLRenderer();
+
+	var gui = new dat.GUI( { width: 350 } );
+	//gui stuff
+	options = {
+		displace_height: 1.0,
+		water_level : 0.0
+
+	};
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+
+	var controls = new THREE.OrbitControls( camera,renderer.domElement  );
+	controls.update();
+
+	gui.add( options, "displace_height", 0, 3 );
+	gui.add( options, "water_level", -1, 1 );
 	renderer.setClearColor( 0x999999 );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -320,11 +358,14 @@ function init() {
 			function render() {
 
 				var time = performance.now();
+				//controls.update();
 
 				var object0 = scene.children[ 1 ];
+				var object_water = scene.children[2];
 			//	object0.material.uniforms.displaceAmt.value = 0.5 * (1.0 + Math.sin(time * 0.001)); 
 			
-        		object0.material.uniforms.displaceAmt.value = 1.0;
+        		object0.material.uniforms.displaceAmt.value = options.displace_height;
+        		object_water.position.y = (options.displace_height + options.water_level)/2;
 
 
 				renderer.render( scene, camera );
