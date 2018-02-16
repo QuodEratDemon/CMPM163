@@ -1,0 +1,338 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>three.js - gpu particle system</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+	body {
+		font-family: Monospace;
+		background-color: #f0f0f0;
+		margin: 0px;
+		overflow: hidden;
+	}
+
+	#info {
+		position: absolute;
+		top: 0px;
+		width: 100%;
+		padding: 5px;
+		font-family:Monospace;
+		font-size:13px;
+		text-align:center;
+		color: #ffffff;
+	}
+
+	a {
+		color: #ffffff;
+	}
+	</style>
+</head>
+
+<body>
+
+	<div id="container"></div>
+	<!--
+	<div id="info">
+		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - GPU particle system plugin by <a href="http://charliehoey.com">Charlie Hoey</a>.
+	</div>
+	-->
+
+	<script src="./js/three.js"></script>
+	<script src="./js/dat.gui.min.js"></script>
+	<script src="./js/TrackballControls.js"></script>
+	<script src="./js/GPUParticleSystem2.js"></script>
+	<script src="./js/OBJLoader.js"></script>
+
+	 <script id="vertexobj" type="x-shader/x-vertex">
+
+
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+      	uniform mat4 projectionMatrix;
+
+     	attribute vec3 position; 
+     	attribute vec2 uv;
+
+	varying vec2 vUV;
+
+	void main() {
+
+        	vec4 position = viewMatrix * modelMatrix * vec4(position, 1.0);
+	   	vUV = uv; 
+        	gl_Position = projectionMatrix * position; 
+     	 }
+
+    </script>
+
+
+    <script id="fragmentobj" type="x-shader/x-fragment">
+
+	precision mediump float;
+	uniform sampler2D t1;
+	varying vec2 vUV;
+
+      	void main() {
+		vec4 c1 = texture2D(t1, vUV);
+		//vec4 c2 = vec4(0.0,1.0,0.0,1.0);
+        	gl_FragColor = c1; //, c2, 0.5);
+	}
+
+	</script>
+
+	<script>
+			var vs_obj = document.getElementById( 'vertexobj' ).textContent;
+      		var fs_obj = document.getElementById( 'fragmentobj' ).textContent;
+
+		var camera, tick = 0,
+			scene, scene2, renderer, clock = new THREE.Clock(),
+			controls, container, gui = new dat.GUI( { width: 350 } ),
+			options, spawnerOptions, particleSystem;
+
+		var mesh;
+		var hand;
+		var texture1;
+
+		init();
+		animate();
+
+		function processBlenderObject (geometry, materials) {
+
+				//var useGeometry = new THREE.BufferGeometry().fromGeometry( geometry );
+				var useGeometry = geometry;
+
+
+			var ambient = new THREE.Vector3(0.1,0.1,0.1);
+
+        	var light1_pos = new THREE.Vector3(10.0,110.0,0.0); //from above
+        	var light1_diffuse = new THREE.Vector3(1.0,0.0,0.0);
+        	var light1_specular = new THREE.Vector3(1.0,1.0,1.0);
+        
+        	var light2_pos = new THREE.Vector3(-10.0,110.0,0.0); //from the left
+        	var light2_diffuse = new THREE.Vector3(10.0,10.0,1.0);
+        	var light2_specular = new THREE.Vector3(1.0,1.0,1.0);
+
+        	var light3_pos = new THREE.Vector3(10.0,-110.0,0.0); 
+        	var light3_diffuse = new THREE.Vector3(0.0,1.0,0.0);
+        	var light3_specular = new THREE.Vector3(1.0,1.0,1.0);
+				var uniforms = {
+					ambient: { type: "v3", value: ambient },
+            		light1_pos: { type: "v3", value: light1_pos },
+            		light1_diffuse: { type: "v3", value: light1_diffuse },
+            		light1_specular:  { type: "v3", value: light1_specular },
+            		light2_pos: { type: "v3", value: light2_pos },
+            		light2_diffuse: { type: "v3", value: light2_diffuse },
+            		light2_specular:  { type: "v3", value: light2_specular },
+            		light3_pos: { type: "v3", value: light3_pos },
+            		light3_diffuse: { type: "v3", value: light3_diffuse },
+            		light3_specular:  { type: "v3", value: light3_specular },
+
+					t1: { type: "t", value: texture1  },
+				};
+
+				var material = new THREE.RawShaderMaterial( {
+					uniforms: uniforms,
+					vertexShader: vs_obj,
+					fragmentShader: fs_obj,	
+				} );
+
+
+				mesh = new THREE.Mesh( useGeometry, material );
+
+
+				//positioning and scaling blender obj so that it's in the center of the screen
+				mesh.position.set( 0, -1.5, 0 );
+				var s = 0.0125;
+				mesh.scale.set( s, s, s );
+				mesh.rotation.y = -Math.PI / 4;
+
+				scene.add( mesh );
+
+
+		}
+
+		function init() {
+
+			//
+
+			container = document.getElementById( 'container' );
+
+			camera = new THREE.PerspectiveCamera( 28, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.z = 100;
+
+			scene = new THREE.Scene();
+			scene2 = new THREE.Scene();
+
+			/*
+
+			var simple_texture;
+
+			var uniforms = {
+
+				t1: { type: "t", value: simple_texture  },
+			};
+
+
+			var obj_material = new THREE.RawShaderMaterial( {
+					uniforms: uniforms,
+					vertexShader: vs_obj,
+					fragmentShader: fs_obj,	
+				} );
+
+			*/
+
+			var obj_material = new THREE.MeshBasicMaterial();
+			obj_material.color = new THREE.Color(0x6f4f1d);
+
+			var loader = new THREE.OBJLoader();
+			loader.load('hand.obj', function(object){
+				object.traverse(function(child){
+					if (child instanceof THREE.Mesh){
+						child.material = obj_material;
+
+					}
+				});
+				object.rotateX(-Math.PI/2);
+
+				//object.material.depthWrite = false;
+
+				hand = object;
+				//hand.add(particleSystem)
+				scene.add(hand);
+
+			});
+
+			// The GPU Particle system extends THREE.Object3D, and so you can use it
+			// as you would any other scene graph component.	Particle positions will be
+			// relative to the position of the particle system, but you will probably only need one
+			// system for your whole scene
+
+			particleSystem = new THREE.GPUParticleSystem( {
+				maxParticles: 250000,
+
+			} );
+
+			scene.add( particleSystem );
+
+			// options passed during each spawned
+
+			options = {
+				position: new THREE.Vector3(),
+				positionRandomness: .3,
+				velocity: new THREE.Vector3(),
+				velocityRandomness: .5,
+				color : 0xff0000,
+				colorRandomness: .1,
+				turbulence: .5,
+				lifetime: 2,
+				size: 5,
+				sizeRandomness: 1
+			};
+
+			spawnerOptions = {
+				spawnRate: 15000,
+				horizontalSpeed: 1.5,
+				verticalSpeed: 1.33,
+				timeScale: 1
+			};
+
+			//
+
+			gui.add( options, "velocityRandomness", 0, 3 );
+			gui.add( options, "positionRandomness", 0, 3 );
+			gui.add( options, "size", 1, 20 );
+			gui.add( options, "sizeRandomness", 0, 25 );
+			gui.add( options, "colorRandomness", 0, 1 );
+			gui.add( options, "lifetime", .1, 10 );
+			gui.add( options, "turbulence", 0, 1 );
+
+			gui.add( spawnerOptions, "spawnRate", 10, 30000 );
+			gui.add( spawnerOptions, "timeScale", -1, 1 );
+
+			//
+
+			//
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.autoClear = false;
+			container.appendChild( renderer.domElement );
+
+			//
+
+			controls = new THREE.TrackballControls( camera, renderer.domElement );
+			controls.rotateSpeed = 5.0;
+			controls.zoomSpeed = 2.2;
+			controls.panSpeed = 1;
+			controls.dynamicDampingFactor = 0.3;
+
+			window.addEventListener( 'resize', onWindowResize, false );
+
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			requestAnimationFrame( animate );
+
+			controls.update();
+
+			var delta = clock.getDelta() * spawnerOptions.timeScale;
+
+			
+
+			tick += delta;
+
+			if ( tick < 0 ) tick = 0;
+
+
+
+			if ( delta > 0 ) {
+
+				//options.position.x = Math.sin( tick * spawnerOptions.horizontalSpeed ) * 20;
+				//options.position.y = Math.sin( tick * spawnerOptions.verticalSpeed ) * 10;
+				//options.position.z = Math.sin( tick * spawnerOptions.horizontalSpeed + spawnerOptions.verticalSpeed ) * 5;
+
+				for ( var x = 0; x < spawnerOptions.spawnRate * delta; x++ ) {
+
+					// Yep, that's really it.	Spawning particles is super cheap, and once you spawn them, the rest of
+					// their lifecycle is handled entirely on the GPU, driven by a time uniform updated below
+
+					particleSystem.spawnParticle( options );
+
+				}
+
+			}
+
+
+			particleSystem.update( tick );
+
+
+
+			render();
+
+		}
+
+		function render() {
+
+			//renderer.render( scene, camera );
+
+   			 renderer.render(scene,camera);
+
+		}
+
+	</script>
+</body>
+
+</html>
+
