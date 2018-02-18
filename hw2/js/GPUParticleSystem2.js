@@ -196,6 +196,7 @@ THREE.GPUParticleSystem = function ( options ) {
 			}
 		},
 		blending: THREE.AdditiveBlending,
+		//blending: THREE.MultiplyBlending,
 		vertexShader: GPUParticleShader.vertexShader,
 		fragmentShader: GPUParticleShader.fragmentShader
 	} );
