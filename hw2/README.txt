@@ -10,3 +10,4 @@ https://github.com/QuodEratDemon/CMPM163/blob/master/hw2/screenshotB.png
 For part B I used a hand from Google poly and added a particle system using the GPUParticlesystem to make it seem that the wrist is bleeding.
 I consider a bleeding wrist a natural phenomenon. The material for the hand is generated using perlin noise, creating this flowing effect.
 I find this effect similar to the numbing feeling you get when you lose a lot of blood, if that has ever happened to you, so i feel it fits.
+If you look closely, the blood is Angus's face.
