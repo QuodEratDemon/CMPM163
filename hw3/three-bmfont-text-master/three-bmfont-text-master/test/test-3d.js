@@ -18,14 +18,42 @@ var loadFont = require('load-bmfont')
 // load up a 'fnt' and texture
 require('./load')({
   font: 'fnt/DejaVu-sdf.fnt',
-  image: 'fnt/DejaVu-sdf.png'},
-  {font2: 'fnt/Lato-Regular-64.fnt',
-  image2: 'fnt/lato.png'
+  image: 'fnt/DejaVu-sdf.png'}
   
-}, start)
+, start)
 
 
+function rgbToHex(r, g, b) {
+    return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
 
+function byteToHexString(uint8arr) {
+  if (!uint8arr) {
+    return '';
+  }
+  
+  var hexStr = '';
+  for (var i = 0; i < uint8arr.length; i++) {
+    var hex = (uint8arr[i] & 0xff).toString(16);
+    hex = (hex.length === 1) ? '0' + hex : hex;
+    hexStr += hex;
+  }
+  
+  return hexStr.toUpperCase();
+}
+
+function hexStringToByte(str) {
+  if (!str) {
+    return new Uint8Array();
+  }
+  
+  var a = [];
+  for (var i = 0, len = str.length; i < len; i+=2) {
+    a.push(parseInt(str.substr(i,2),16));
+  }
+  
+  return new Uint8Array(a);
+}
 
 
 function start (font, texture, font2, texture2) {
@@ -41,32 +69,67 @@ function start (font, texture, font2, texture2) {
   var newFont = font
   var newTex = texture
 
+  function setFont(f,t){
+    newFont = f;
+    newTex = t;
+    
+
+  }
+
 
   var gui = new dat.GUI( { width: 350 } );
   var options1 = {
-    text : 'insert text here',
-    Red : '230',
-    Green: '230',
-    Blue: '230',
+    Text : 'insert text here',
+    Width: 500,
+    Red : 255,
+    Green: 255,
+    Blue: 255,
     DejaVu: function(){
     newFont = font
     newTex = texture
     },
+    Arial: function(){
+    require('./load')({
+    font: 'fnt/arial.fnt',
+    image: 'fnt/arial.png'
+    }
+  
+    , setFont)
+
+    },
+
     Lato: function(){
-    newFont = loadFont('fnt/Lato-Regular-64.fnt')
-    newTex = textureLoader.load('fnt/lato.png')
-    console.log(newTex)
+    require('./load')({
+    font: 'fnt/Lato-Regular-32.fnt',
+    image: 'fnt/lato.png'
+    }
+  
+    , setFont)
+
+    },
+
+    Segoe: function(){
+    require('./load')({
+    font: 'fnt/Segoe.fnt',
+    image: 'fnt/Segoe.png'
+    }
+  
+    , setFont)
 
     }
 
 
+
   }
-  gui.add(options1, "text")
-  gui.add(options1, "Red")
-  gui.add(options1, "Green")
-  gui.add(options1, "Blue")
+  gui.add(options1, "Text")
+  gui.add(options1, "Width",100,1000)
+  gui.add(options1, "Red",0,255)
+  gui.add(options1, "Green",0,255)
+  gui.add(options1, "Blue",0,255)
   gui.add(options1, "DejaVu")
   gui.add(options1, "Lato")
+  gui.add(options1, "Arial")
+   gui.add(options1, "Segoe")
 
 
   // setup our texture with some nice mipmapping etc
@@ -80,9 +143,9 @@ function start (font, texture, font2, texture2) {
 
   // create our text geometry
   var geom = createText({
-    text: options1.text, // the string to render
+    text: options1.Text, // the string to render
     font: font, // the bitmap font definition
-    width: 1000 // optional width for word-wrap
+    width: options1.Width // optional width for word-wrap
   })
 
   // here we use 'three-bmfont-text/shaders/sdf'
@@ -116,19 +179,22 @@ function start (font, texture, font2, texture2) {
     map: newTex,
     side: THREE.DoubleSide,
     transparent: true,
-    color: 'rgb(' + options1.Red +','+ options1.Green +','+options1.Blue + ')'
+    color: parseInt( rgbToHex(options1.Red,options1.Green,options1.Blue),16) //'rgb(' + options1.Red.toString() +','+ options1.Green.toString() +','+options1.Blue.toString() + ')'
   }))
 
-    
-
+    //console.log(hexStringToByte(rgbToHex(options1.Red,options1.Green,options1.Blue)))
+//console.log(0xFFFFFF);
     text.material = newMat
 
 
+    //console.log(text.material)
+
     //text.geometry._opt.font = newFont
-    
+    console.log(geom);
     geom.update({
       font: newFont,
-      text: options1.text
+      text: options1.Text,
+      width: options1.Width
     })
 
   })
