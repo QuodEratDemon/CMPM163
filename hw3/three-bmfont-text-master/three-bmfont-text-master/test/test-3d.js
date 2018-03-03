@@ -63,6 +63,9 @@ function start (font, texture, font2, texture2) {
     fov: 55,
     position: new THREE.Vector3(0, 0, -5)
   })
+
+console.log(app)
+  app.controls.enabled = false;
   
   var textureLoader = new THREE.TextureLoader();
   var maxAni = app.renderer.getMaxAnisotropy()
@@ -116,13 +119,22 @@ function start (font, texture, font2, texture2) {
   
     , setFont)
 
-    }
+    },
+
+    Rotation: 0.0,
+    Scale : 1.0,
+    PositionX : 0.0,
+    PositionY: 0.0
 
 
 
   }
   gui.add(options1, "Text")
   gui.add(options1, "Width",100,1000)
+    gui.add(options1, "Rotation",0.0,6.5),
+    gui.add(options1, "Scale",1.0,5.0),
+  gui.add(options1, "PositionX",-2.0,2.0),
+  gui.add(options1, "PositionY",-2.0,2.0),
   gui.add(options1, "Red",0,255)
   gui.add(options1, "Green",0,255)
   gui.add(options1, "Blue",0,255)
@@ -190,12 +202,18 @@ function start (font, texture, font2, texture2) {
     //console.log(text.material)
 
     //text.geometry._opt.font = newFont
-    console.log(geom);
     geom.update({
       font: newFont,
       text: options1.Text,
       width: options1.Width
     })
+
+    textAnchor.rotation.z = options1.Rotation;
+    textAnchor.position.x = options1.PositionX;
+    textAnchor.position.y = options1.PositionY;
+
+    textAnchor.scale.y = -0.005 * options1.Scale
+    textAnchor.scale.x = -0.005 * options1.Scale
 
   })
 }

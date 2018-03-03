@@ -281,10 +281,10 @@ var width = window.innerWidth;
 
       renderer = new THREE.WebGLRenderer();
       renderer.setSize( window.innerWidth, window.innerHeight );
-      renderer.setPixelRatio( window.devicePixelRatio );
-      container.appendChild( renderer.domElement );
+      //renderer.setPixelRatio( window.devicePixelRatio );
+      //container.appendChild( renderer.domElement );
 
-      //document.body.appendChild( renderer.domElement );
+      document.body.appendChild( renderer.domElement );
 
     window.addEventListener( 'resize', onWindowResize, false );
 	}
