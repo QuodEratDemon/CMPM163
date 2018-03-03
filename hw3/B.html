@@ -251,12 +251,12 @@ var width = window.innerWidth;
       camera.position.z = 5;
 		scene = new THREE.Scene();
 
-    var texRes = THREE.ImageUtils.loadTexture( 'angus.jpg');
+    var texRes = THREE.ImageUtils.loadTexture( 'ice.png');
     
     var tuniform = {
         iTime:    { type: 'f', value: 0.1 },
         iResolution: new THREE.Uniform(new THREE.Vector2(window.innerWidth, window.innerHeight)),
-        iChannel0:  { type: 't', value: THREE.ImageUtils.loadTexture( 'angus.jpg') },
+        iChannel0:  { type: 't', value: THREE.ImageUtils.loadTexture( 'ice.png') },
         iTexRes: new THREE.Uniform(new THREE.Vector2(texRes.width, texRes.height))
 
     };
